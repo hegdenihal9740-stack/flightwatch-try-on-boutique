@@ -222,7 +222,12 @@ export function FlipkartDetails({
               <h4>You may also like</h4>
               <div className="fk-recs">
                 {watches.filter((r) => r.id !== active).map((r) => (
-                  <button type="button" key={r.id} className="fk-rec" onClick={() => setPick(r.id)}>
+                  <button type="button" key={r.id} className="fk-rec" onClick={(e) => {
+                    const y = window.scrollY; (e.currentTarget as HTMLButtonElement).blur();
+                    setPick(r.id);
+                    let n = 0; const keep = () => { if (Math.abs(window.scrollY - y) > 2) window.scrollTo({ top: y }); if (++n < 30) requestAnimationFrame(keep); };
+                    requestAnimationFrame(keep);
+                  }}>
                     <img src={r.image} alt={r.name} />
                     <span className="fk-rec-name">{r.name}</span>
                     <span className="fk-rec-sub">{r.finish}</span>
