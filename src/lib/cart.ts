@@ -4,17 +4,26 @@ import type { WatchTone } from '@/lib/watches';
 export const prices: Record<WatchTone, number> = { steel: 12800, black: 14500, gold: 18500, rosegold: 16900 };
 export type CartItem = { id: WatchTone; qty: number };
 
-const KEY = 'private-flight-cart';
+const BASE = 'private-flight-cart';
+let userKey = 'guest';
+const keyFor = (u: string) => `${BASE}:${u}`;
 let items: CartItem[] = [];
 let loaded = false;
 let openState = false;
 const listeners = new Set<() => void>();
 const emit = () => { listeners.forEach(l => l()); };
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify(items)); } catch { /* storage unavailable */ } };
+const save = () => { try { localStorage.setItem(keyFor(userKey), JSON.stringify(items)); } catch { /* storage unavailable */ } };
+const readFor = (u: string): CartItem[] => { try { const raw = localStorage.getItem(keyFor(u)); return raw ? JSON.parse(raw) as CartItem[] : []; } catch { return []; } };
+const switchUser = (u: string) => { if (u === userKey) return; userKey = u; items = readFor(u); emit(); };
 const load = () => {
   if (loaded || typeof window === 'undefined') return;
   loaded = true;
-  try { const raw = localStorage.getItem(KEY); if (raw) items = JSON.parse(raw) as CartItem[]; } catch { /* ignore */ }
+  try { localStorage.removeItem(BASE); } catch { /* ignore old shared cart */ }
+  items = readFor(userKey);
+  void import('@/integrations/supabase/client').then(({ supabase }) => {
+    void supabase.auth.getSession().then(({ data }) => switchUser(data.session?.user.id ?? 'guest'));
+    supabase.auth.onAuthStateChange((_e, session) => switchUser(session?.user.id ?? 'guest'));
+  });
 };
 
 export const cart = {
