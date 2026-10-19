@@ -223,9 +223,15 @@ export function FlipkartDetails({
               <div className="fk-recs">
                 {watches.filter((r) => r.id !== active).map((r) => (
                   <button type="button" key={r.id} className="fk-rec" onClick={(e) => {
-                    const y = window.scrollY; (e.currentTarget as HTMLButtonElement).blur();
+                    const box = (e.currentTarget as HTMLElement).closest('.fk-panel') as HTMLElement | null;
+                    const y = window.scrollY; const by = box?.scrollTop ?? 0; (e.currentTarget as HTMLButtonElement).blur();
                     setPick(r.id);
-                    let n = 0; const keep = () => { if (Math.abs(window.scrollY - y) > 2) window.scrollTo({ top: y }); if (++n < 30) requestAnimationFrame(keep); };
+                    let n = 0; const keep = () => {
+                      if (Math.abs(window.scrollY - y) > 2) window.scrollTo({ top: y });
+                      const b = document.querySelector('.fk-panel') as HTMLElement | null;
+                      if (b && Math.abs(b.scrollTop - by) > 2) b.scrollTop = by;
+                      if (++n < 30) requestAnimationFrame(keep);
+                    };
                     requestAnimationFrame(keep);
                   }}>
                     <img src={r.image} alt={r.name} />
